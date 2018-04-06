@@ -30,7 +30,7 @@ public class db_connection {
 	public ResultSet runSql(String query) throws SQLException {	//To run custom SQL from server
 		
 		rs = st.executeQuery(query);
-		if(rs.next()) {
+		if(rs.isBeforeFirst()) {
 			return rs;
 		}
 		else return null;
@@ -54,6 +54,17 @@ public class db_connection {
 			return rs;
 		}else
 			return null;
+	}
+	
+	
+	public void savePedestrian(double posx, double posy, double destx, double desty, String pref) throws SQLException {
+		String q = "INSERT INTO `pedestrian` (`posx`, `posy`, `destx`, `desty`, `preferences`) VALUES (" + posx + ", " + posy + ", "+destx+", "+desty+", '"+pref+"');";
+		st.executeUpdate(q);
+	}
+	
+	public void saveDriver(double posx, double posy, double destx, double desty, double cost, double passengers, double freeSeats, String regulations) throws SQLException {
+		String q = "INSERT INTO `driver` (`id`, `posx`, `posy`, `destx`, `desty`, `passengers`, `free_seats`, `cost`, `regulations`) VALUES (NULL, '"+posx+"', '"+posy+"', '"+destx+"', '"+desty+"', '"+passengers+"', '"+freeSeats+"', '"+cost+"', '"+regulations+"');";
+		st.executeUpdate(q);
 	}
 
 }

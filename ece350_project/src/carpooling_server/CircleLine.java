@@ -7,8 +7,7 @@ import java.util.List;
 
 public class CircleLine {
 
-    public static List<Point> getCircleLineIntersectionPoint(Point pointA,
-            Point pointB, Point center, double radius) {
+    public static List<Point> getCircleLineIntersectionPoint(Point pointA,Point pointB, Point center, double radius) {
         double baX = pointB.x - pointA.x;
         double baY = pointB.y - pointA.y;
         double caX = center.x - pointA.x;
@@ -49,6 +48,13 @@ public class CircleLine {
         public String toString() {
             return "Point [x=" + x + ", y=" + y + "]";
         }
+    }
+    
+    public static double getDistance(Point pointA,Point pointB) {
+    	double addition = Math.pow((pointA.x-pointB.x), 2) + Math.pow((pointA.y-pointB.y), 2);
+    	double distance = Math.sqrt(addition);
+ 
+    	return distance;
     }
 
 }
