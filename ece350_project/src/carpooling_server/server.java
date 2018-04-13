@@ -146,7 +146,10 @@ public class server {
 
 								if(output.equals("1")) {
 									dout.writeBytes(output + '\n');
-									output = drivers.get(0).toString();
+									output ="";
+									for(int j=0;j<drivers.size()/3;j++) {
+										output += "ID# "+ drivers.get(j*3).toString() + ", closest meeting point: " + drivers.get(3*j+1).toString() + ", charge: " + drivers.get(3*j+2).toString() + "##";
+									}
 									dout.writeBytes(output + '\n');
 									dout.flush();
 									//send the cars
@@ -154,13 +157,21 @@ public class server {
 									//put on waiting list
 									dout.writeBytes(output + '\n');
 									dout.flush();
+									return;
 									
 								}
-								//input = din.readLine();	
 								
-									
+								//wait for reply, picking any of the drivers
+								input = din.readLine();
+								int id = Integer.valueOf(input);
+								System.out.println("Driver requested is: ");
+								ResultSet driver = server.db.findDriver_id(id);
+								id = driver.getInt("id");
+								System.out.print(id);
 							}else
 							{
+								
+								//Driver case
 								positions = new Double[8]; 
 								//Driver part
 								for(i=0;i<parts.length-2;i++) {

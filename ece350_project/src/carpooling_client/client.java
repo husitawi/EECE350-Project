@@ -74,7 +74,12 @@ public class client {
 			if(reply.equals("1")) {
 				System.out.println("Driver(s) available:");
 				reply = serverInput.readLine();
+				reply = reply.replace("##", "\n");
 				System.out.println(reply);
+				System.out.println("\nPlease pick a driver form the list above by entering his ID#:");
+				request = userInput.readLine();
+				out.writeBytes(request + '\n');
+				out.flush();
 				
 			}else {
 				System.out.println("No drivers were found, you were put on the waiting list:");
