@@ -7,7 +7,7 @@ import java.io.InputStreamReader;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
-public class client {
+public class driver {
 	
 	public final static String ip = "localhost";
 
@@ -57,36 +57,46 @@ public class client {
 				request += ",";
 				
 				
-			System.out.println("Now please add your preferences seperated by spaces ex: S, PF");  //PF = pet friendly
+
+			
+			System.out.println("Now please enter your cost");
 			request += userInput.readLine();
 			
-			request += ",P";
+			request += ",";
+			
+			System.out.println("Now please the number of passenegers currently in the car");  //PF = pet friendly
+			request += userInput.readLine();
+			
+			request += ",";
+			
+			System.out.println("Now please enter the number of free seats");
+			request += userInput.readLine();
+			
+			request += ",";
+			
+			System.out.println("Now please add your regulations seperated by spaces ex: S, PF");  //PF = pet friendly
+			request += userInput.readLine();
+			
+			request += ",D";
 			//Runtime.getRuntime().exec("cls"); Clear the console, does not work inside ide
 			
 			
 			out.writeBytes(request + '\n');
 			out.flush();
 			//keepGoing  = false;
+
 			
 			reply = serverInput.readLine();
-			if(reply.equals("1")) {
-				System.out.println("Driver(s) available:");
-				reply = serverInput.readLine();
-				reply = reply.replace("##", "\n");
-				System.out.println(reply);
-				System.out.println("\nPlease pick a driver form the list above by entering his ID#:");
-				request = userInput.readLine();
-				out.writeBytes(request + '\n');
-				out.flush();
-				
-				System.out.println("\nWaiting for driver response");
-				reply = serverInput.readLine();
-				System.out.println("The driver requested with " + reply);
-				Thread.sleep(60000);
-			}else {
-				System.out.println("No drivers were found, you were put on the waiting list:");
-				
-			}
+			System.out.println("A new client has been found, take request ? [y/n]");
+			request = userInput.readLine();
+			out.writeBytes(request + '\n');
+			out.flush();
+			
+			//no need to check the reply because the driver will only get a reply when pedestrians are found
+			
+//			while(true) {		//keep checking for offers
+//				
+//			}
 			
 		}
 		

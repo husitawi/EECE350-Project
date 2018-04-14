@@ -10,7 +10,9 @@ import java.net.Socket;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import carpooling_server.CircleLine.Point;
 
@@ -19,7 +21,8 @@ public class server {
 	private int port = 666;
 	public static db_connection db;
 	private ServerSocket serverSocket;
-	
+	public static Map<Integer, String> driver_id = new HashMap<Integer, String>(); //requested drivers
+
 	public server() throws ClassNotFoundException, SQLException {
 		 db = new db_connection();
 	}
@@ -103,23 +106,25 @@ public class server {
 		private db_connection db;
 		public  String input;
 		public  String output;
-		Double[] positions;
+		public Double[] positions;
+		
 		
 		public ServerThread(Socket socket, db_connection database) { 
 		  this.socket = socket;
 		  this.db = database;
 		  }
 		
-		public void run() {
+		public void  run() {
 			//	Do calculations to find driver and other wonders
 			try {
+				
 				int i;
 				din  = new BufferedReader(new InputStreamReader (socket.getInputStream()));
 				dout = new DataOutputStream(socket.getOutputStream());
 				
 							input = din.readLine();	
 				//Do all the separations and functionalities here
-				
+							
 							String[] parts = input.split(",");
 							if(parts[parts.length-1].equals("P")) {
 								
@@ -164,10 +169,15 @@ public class server {
 								//wait for reply, picking any of the drivers
 								input = din.readLine();
 								int id = Integer.valueOf(input);
-								System.out.println("Driver requested is: ");
-								ResultSet driver = server.db.findDriver_id(id);
-								id = driver.getInt("id");
-								System.out.print(id);
+								server.driver_id.put(id,"W");
+
+								while(server.driver_id.get(id) == "W" ) {	//keep checking for offers
+									Thread.sleep(6000); //wait 6 sec before checking the requested drivers again
+								}
+								output = server.driver_id.get(id);
+								
+								dout.writeBytes(output + '\n');
+								dout.flush();
 							}else
 							{
 								
@@ -180,7 +190,23 @@ public class server {
 								
 								String regulations = parts[i];	//save preferences
 								
-								db.saveDriver(positions[0], positions[1], positions[2], positions[3],positions[4],positions[5],positions[6], regulations);
+								int myid = db.saveDriver(positions[0], positions[1], positions[2], positions[3],positions[4],positions[5],positions[6], regulations);
+									
+								while(server.driver_id.containsKey(myid) == false ) {	//keep checking for offers
+									Thread.sleep(6000); //wait 6 sec before checking the requested drivers again
+								}
+								
+								output = "offer";
+								dout.writeBytes(output + '\n');
+								dout.flush();
+								
+								input = din.readLine();
+								if(input.equals("y")) {
+									server.driver_id.replace(myid, "W", "A");
+								}else {
+									server.driver_id.replace(myid, "W", "R");
+								}
+								
 							}
 							
 							
@@ -188,16 +214,14 @@ public class server {
 							
 
 							
-							output = "Done saving the pedestraian";
-							dout.writeBytes(output + '\n');
-							dout.flush();
+
 				//close data streams
 				din.close();
 				dout.close();
 				socket.close();
 			
 				}
-				catch (IOException | SQLException e) {
+				catch (IOException | SQLException | InterruptedException e) {
 				e.printStackTrace();
 			}
 			
