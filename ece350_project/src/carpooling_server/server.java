@@ -48,9 +48,29 @@ public class server {
 		      }
 			}
 	
-	public static ArrayList<String> checkDrivers(double posx, double posy, double destx, double desty) throws SQLException {
+	public static ArrayList<String> checkDrivers(double posx, double posy, double destx, double desty, ArrayList<Integer> skip) throws SQLException {
 		
-		ResultSet result = db.runSql("SELECT * FROM `driver` where free_seats > 0");
+		
+		String sql = "SELECT * FROM `driver` where free_seats > 0 ";
+		
+		if(!skip.isEmpty()) {
+	
+				sql += " AND id NOT IN (";
+				
+				for(int k=0;k<skip.size();k++) {
+					sql += skip.get(k) + ",";
+				}
+				
+				if(sql.substring(sql.length() - 1).equals(",")) {
+					sql = sql.substring(0,sql.length() - 1);
+				}
+				
+				sql += ")";			
+		}
+		
+		System.out.println(sql);
+		
+		ResultSet result = db.runSql(sql);
 		ArrayList<String> drivers = new ArrayList<String>() ;
 
 		while(result.next()) {
@@ -107,6 +127,8 @@ public class server {
 		public  String input;
 		public  String output;
 		public Double[] positions;
+		public ArrayList<Integer> skip = new ArrayList<Integer>();
+		public ArrayList<String> drivers;
 		
 		
 		public ServerThread(Socket socket, db_connection database) { 
@@ -140,44 +162,67 @@ public class server {
 									
 								
 									//Search for available drives DO THE LOGIC HERE, THEN REPLY
-								ArrayList<String> drivers = server.checkDrivers(positions[0], positions[1], positions[2], positions[3]);
+								drivers = server.checkDrivers(positions[0], positions[1], positions[2], positions[3], skip);
+								boolean flag = true;
 								
-								//get intersections and pick the correct output 1 or 0
-								if(drivers.isEmpty()) {
-									output = "0";
-								}else {
-									output = "1";
-								}
-
-								if(output.equals("1")) {
-									dout.writeBytes(output + '\n');
-									output ="";
-									for(int j=0;j<drivers.size()/3;j++) {
-										output += "ID# "+ drivers.get(j*3).toString() + ", closest meeting point: " + drivers.get(3*j+1).toString() + ", charge: " + drivers.get(3*j+2).toString() + "##";
-									}
-									dout.writeBytes(output + '\n');
-									dout.flush();
-									//send the cars
-								}else {
-									//put on waiting list
-									dout.writeBytes(output + '\n');
-									dout.flush();
-									return;
+								while(flag) {
 									
+								
+										//get intersections and pick the correct output 1 or 0
+										if(drivers.isEmpty()) {
+											output = "0";
+										}else {
+											output = "1";
+										}
+		
+										if(output.equals("1")) {
+											dout.writeBytes(output + '\n');
+											output ="";
+											for(int j=0;j<drivers.size()/3;j++) {
+												output += "ID# "+ drivers.get(j*3).toString() + ", closest meeting point: " + drivers.get(3*j+1).toString() + ", charge: " + drivers.get(3*j+2).toString() + "##";
+											}
+											dout.writeBytes(output + '\n');
+											dout.flush();
+											//send the cars
+											//wait for reply, picking any of the drivers
+											
+											input = din.readLine();
+											int id = Integer.valueOf(input);
+											server.driver_id.put(id,"W");
+			
+											while(server.driver_id.get(id) == "W" ) {	//keep checking for offers
+												Thread.sleep(1000); //wait 1 second before checking the requested drivers again
+											}
+											
+											output = server.driver_id.get(id);
+											
+											dout.writeBytes(output + '\n');
+											dout.flush();
+											
+						
+											//rejected case
+											if(server.driver_id.get(id) == "R" ) {
+												skip.add(id);
+												drivers = server.checkDrivers(positions[0], positions[1], positions[2], positions[3], skip);
+											}
+											
+											
+										}else {
+											//put on waiting list
+											dout.writeBytes(output + '\n');
+											dout.flush();
+											
+											//wait
+											//check for drivers again 
+											//read result again
+											
+											break;
+										}
+										
 								}
 								
-								//wait for reply, picking any of the drivers
-								input = din.readLine();
-								int id = Integer.valueOf(input);
-								server.driver_id.put(id,"W");
-
-								while(server.driver_id.get(id) == "W" ) {	//keep checking for offers
-									Thread.sleep(6000); //wait 6 sec before checking the requested drivers again
-								}
-								output = server.driver_id.get(id);
 								
-								dout.writeBytes(output + '\n');
-								dout.flush();
+								
 							}else
 							{
 								
@@ -192,19 +237,19 @@ public class server {
 								
 								int myid = db.saveDriver(positions[0], positions[1], positions[2], positions[3],positions[4],positions[5],positions[6], regulations);
 									
-								while(server.driver_id.containsKey(myid) == false ) {	//keep checking for offers
-									Thread.sleep(6000); //wait 6 sec before checking the requested drivers again
+								while(server.driver_id.containsKey(myid) == false && server.driver_id.get(myid) == "W") {	//keep checking for offers
+									Thread.sleep(2000); //wait 2 seconds before checking the requested drivers again
 								}
 								
 								output = "offer";
 								dout.writeBytes(output + '\n');
 								dout.flush();
 								
-								input = din.readLine();
+								input = din.readLine();	//read answer
 								if(input.equals("y")) {
-									server.driver_id.replace(myid, "W", "A");
+									server.driver_id.replace(myid, "W", "A");			//A --> accepted
 								}else {
-									server.driver_id.replace(myid, "W", "R");
+									server.driver_id.replace(myid, "W", "R");			//R --> rejected
 								}
 								
 							}

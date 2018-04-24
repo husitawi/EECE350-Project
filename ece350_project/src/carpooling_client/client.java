@@ -19,6 +19,8 @@ public class client {
 		System.out.println("Connected to server");
 		boolean keepGoing = true;
 		long commas;
+		String savedRequest;
+		boolean flag = true;
 		//Thread.sleep(60000);		// Delay for 1 minute to test multi threading
 		
 		BufferedReader   userInput   = new BufferedReader  (new InputStreamReader(System.in));			//Keyboard input
@@ -61,32 +63,47 @@ public class client {
 			request += userInput.readLine();
 			
 			request += ",P";
-			//Runtime.getRuntime().exec("cls"); Clear the console, does not work inside ide
+			//Runtime.getRuntime().exec("cls"); Clear the console, does not work inside eclipse
 			
-			
+			savedRequest = request;
 			out.writeBytes(request + '\n');
 			out.flush();
-			//keepGoing  = false;
 			
-			reply = serverInput.readLine();
-			if(reply.equals("1")) {
-				System.out.println("Driver(s) available:");
+			while(flag) 
+			{	
+			
 				reply = serverInput.readLine();
-				reply = reply.replace("##", "\n");
-				System.out.println(reply);
-				System.out.println("\nPlease pick a driver form the list above by entering his ID#:");
-				request = userInput.readLine();
-				out.writeBytes(request + '\n');
-				out.flush();
-				
-				System.out.println("\nWaiting for driver response");
-				reply = serverInput.readLine();
-				System.out.println("The driver requested with " + reply);
-				Thread.sleep(60000);
-			}else {
-				System.out.println("No drivers were found, you were put on the waiting list:");
+				if(reply.equals("1")) {
+						System.out.println("Driver(s) available:");
+						reply = serverInput.readLine();
+						reply = reply.replace("##", "\n");
+						System.out.println(reply);
+						System.out.println("\nPlease pick a driver form the list above by entering his ID#:");
+						request = userInput.readLine();
+						out.writeBytes(request + '\n');
+						out.flush();
+						
+					System.out.println("\nWaiting for driver response");
+					reply = serverInput.readLine();
+					
+					if(reply.equals("R")) {
+						System.out.println("\nThe driver rejected the request, retrying . . ");
+						//just wait for another check
+					}else{
+						System.out.println("\nThe driver accepted the request");
+						//start doing some other shit
+					}
+					
+				}else {
+					System.out.println("No drivers were found, you were put on the waiting list:");
+						//just wait for another check
+					}
+			
 				
 			}
+
+			
+			
 			
 		}
 		

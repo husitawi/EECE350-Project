@@ -25,7 +25,7 @@ public class driver {
 		DataOutputStream out 		 = new DataOutputStream(s.getOutputStream());						//User   --> Server
 		BufferedReader   serverInput = new BufferedReader  (new InputStreamReader(s.getInputStream())); //Server --> User
 		
-		while(keepGoing == true) {
+		while(keepGoing == true) {//loop used to handle wrong inputs
 			//Runtime.getRuntime().exec("cls"); Clear the console, does not work inside ide
 			
 			
@@ -85,16 +85,17 @@ public class driver {
 			out.flush();
 			//keepGoing  = false;
 
+//			while(true) {		//keep checking for offers
 			
-			reply = serverInput.readLine();
-			System.out.println("A new client has been found, take request ? [y/n]");
-			request = userInput.readLine();
-			out.writeBytes(request + '\n');
-			out.flush();
+				reply = serverInput.readLine();
+				System.out.println("A new client has been found, take request ? [y/n]");
+				request = userInput.readLine();
+				out.writeBytes(request + '\n');
+				out.flush();
 			
 			//no need to check the reply because the driver will only get a reply when pedestrians are found
 			
-//			while(true) {		//keep checking for offers
+
 //				
 //			}
 			
