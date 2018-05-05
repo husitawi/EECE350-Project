@@ -9,10 +9,13 @@ public class logic {
 
 	public static server mainServer = null;
 	
-	public static void main(String[] args) throws SQLException, IOException, ClassNotFoundException {
-
+	
+	public static void main(String[] args) throws SQLException, IOException, ClassNotFoundException, InterruptedException {
+		
 			mainServer = new server();
 			mainServer.acceptConnections();
+			
+
 	
 	}
 }

@@ -7,6 +7,8 @@ import java.io.InputStreamReader;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
+import carpooling_server.server;
+
 public class client {
 	
 	public final static String ip = "localhost";
@@ -65,6 +67,8 @@ public class client {
 			request += ",P";
 			//Runtime.getRuntime().exec("cls"); Clear the console, does not work inside eclipse
 			
+			System.out.println("Waiting for some drivers to come up");
+			
 			savedRequest = request;
 			out.writeBytes(request + '\n');
 			out.flush();
@@ -87,15 +91,19 @@ public class client {
 					reply = serverInput.readLine();
 					
 					if(reply.equals("R")) {
-						System.out.println("\nThe driver rejected the request, retrying . . ");
+						System.out.println("\nThe driver rejected the request, please pick another ");
 						//just wait for another check
 					}else{
-						System.out.println("\nThe driver accepted the request");
+						System.out.println("\nThe driver accepted the request!");
 						//start doing some other shit
+						
+						//wait for a server signal to display bill and end the pedestrian
+						//the server will calculate and wait the needed time for them to meet 
+						return;
 					}
 					
 				}else {
-					System.out.println("No drivers were found, you were put on the waiting list:");
+					//System.out.println("No drivers were found, Please wait some more");
 						//just wait for another check
 					}
 			

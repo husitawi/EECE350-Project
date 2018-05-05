@@ -84,8 +84,11 @@ public class driver {
 			out.writeBytes(request + '\n');
 			out.flush();
 			//keepGoing  = false;
-
-//			while(true) {		//keep checking for offers
+			
+			System.out.println("Now you wait for offers");
+			
+			
+			while(true) {		//keep checking for offers
 			
 				reply = serverInput.readLine();
 				System.out.println("A new client has been found, take request ? [y/n]");
@@ -94,10 +97,8 @@ public class driver {
 				out.flush();
 			
 			//no need to check the reply because the driver will only get a reply when pedestrians are found
-			
-
-//				
-//			}
+			//the rest of the work will fall on the server side 		
+			}
 			
 		}
 		

@@ -126,9 +126,10 @@ public class server {
 		private db_connection db;
 		public  String input;
 		public  String output;
-		public Double[] positions;
-		public ArrayList<Integer> skip = new ArrayList<Integer>();
-		public ArrayList<String> drivers;
+		public  long connectionStart = System.currentTimeMillis()/1000;	//get current time in seconds
+		public  Double[] positions;
+		public  ArrayList<Integer> skip = new ArrayList<Integer>();
+		public  ArrayList<String> drivers;
 		
 		
 		public ServerThread(Socket socket, db_connection database) { 
@@ -190,7 +191,7 @@ public class server {
 											int id = Integer.valueOf(input);
 											server.driver_id.put(id,"W");
 			
-											while(server.driver_id.get(id) == "W" ) {	//keep checking for offers
+											while(server.driver_id.get(id) == "W" ) {	//keep checking for offer response
 												Thread.sleep(1000); //wait 1 second before checking the requested drivers again
 											}
 											
@@ -209,14 +210,14 @@ public class server {
 											
 										}else {
 											//put on waiting list
-											dout.writeBytes(output + '\n');
-											dout.flush();
-											
+											//dout.writeBytes(output + '\n');
+											//dout.flush();
+											drivers = server.checkDrivers(positions[0], positions[1], positions[2], positions[3], skip);
 											//wait
 											//check for drivers again 
 											//read result again
 											
-											break;
+											//break;
 										}
 										
 								}
@@ -236,20 +237,28 @@ public class server {
 								String regulations = parts[i];	//save preferences
 								
 								int myid = db.saveDriver(positions[0], positions[1], positions[2], positions[3],positions[4],positions[5],positions[6], regulations);
+								//this is where the driver connected
+								
+								
+								
+								
+								
+								while(true) {
 									
-								while(server.driver_id.containsKey(myid) == false && server.driver_id.get(myid) == "W") {	//keep checking for offers
-									Thread.sleep(2000); //wait 2 seconds before checking the requested drivers again
-								}
-								
-								output = "offer";
-								dout.writeBytes(output + '\n');
-								dout.flush();
-								
-								input = din.readLine();	//read answer
-								if(input.equals("y")) {
-									server.driver_id.replace(myid, "W", "A");			//A --> accepted
-								}else {
-									server.driver_id.replace(myid, "W", "R");			//R --> rejected
+										while(server.driver_id.containsKey(myid) == false || server.driver_id.get(myid) != "W") {	//keep checking for offers
+											Thread.sleep(2000); //wait 2 seconds before checking the requested drivers again
+										}
+										
+										output = "offer";
+										dout.writeBytes(output + '\n');
+										dout.flush();
+										
+										input = din.readLine();	//read answer
+										if(input.equals("y")) {
+											server.driver_id.replace(myid, "W", "A");			//A --> accepted
+										}else {
+											server.driver_id.replace(myid, "W", "R");			//R --> rejected
+										}
 								}
 								
 							}
