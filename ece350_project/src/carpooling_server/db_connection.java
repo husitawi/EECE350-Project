@@ -95,6 +95,20 @@ public class db_connection {
 
 	}
 	
+	public void dropPedestrian(int Did) throws SQLException {
+		
+		String q = "UPDATE `driver` SET `free_seats` = `free_seats` + 1, `passengers` = `passengers` - 1 WHERE `driver`.`id` = " + Did;
+		st.executeUpdate(q);
+
+	}
+
+	public void getPedestrian(int Did) throws SQLException {
+		
+		String q = "UPDATE `driver` SET `free_seats` = `free_seats` - 1, `passengers` = `passengers` + 1 WHERE `driver`.`id` = " + Did;
+		st.executeUpdate(q);
+
+	}
+	
 	
 	
 	public synchronized void updateDrivers() throws SQLException {

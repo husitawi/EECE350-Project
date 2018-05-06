@@ -95,6 +95,12 @@ public class driver {
 				request = userInput.readLine();
 				out.writeBytes(request + '\n');
 				out.flush();
+				
+				if(request.equals("y")) {
+					System.out.println("Great, the client will be notified");
+				}else {
+					System.out.println("Offer rejected, client notified");
+				}
 			
 			//no need to check the reply because the driver will only get a reply when pedestrians are found
 			//the rest of the work will fall on the server side 		

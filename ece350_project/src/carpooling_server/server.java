@@ -53,7 +53,7 @@ public class server {
 	public static ArrayList<String> checkDrivers(double posx, double posy, double destx, double desty, ArrayList<Integer> skip) throws SQLException {
 		
 		
-		String sql = "SELECT * FROM `driver` where free_seats > 0 ";
+		String sql = "SELECT * FROM `driver` where free_seats > 0 AND `available` =  1  ";
 		
 		if(!skip.isEmpty()) {
 	
@@ -139,24 +139,30 @@ public class server {
 		  }
 		
 		
-		public int completeOffer(int Did, int Pid, DataOutputStream dout) throws SQLException, IOException {
+		public String completeOffer(int Did, int Pid, DataOutputStream dout) throws SQLException, IOException {
 			ResultSet x;
 			Point intersection;
 			double distanceDriver;
 			double distancePedestrian;
+			double destination;
 			int driverDelay;
 			int pedestrianDelay;
+			int meetingDelay;
 			int totalDelay;
+			int destinationDelay;
+			int charge;
 			
 			//Get the Pedestrian and Driver current locations
 			
 			x = server.db.findPedestrian_id(Pid);
 			Point Pedestrian = new Point(x.getDouble("posx"),x.getDouble("posy"));
 			
-			
+			Point Destination = new Point(x.getDouble("destx"),x.getDouble("desty"));
 			
 			x = server.db.findDriver_id(Did);
 			Point Driver 	 = new Point(x.getDouble("posx"),x.getDouble("posy"));
+			
+			charge = x.getInt("cost");
 			
 			//Find the Intersection point
 			List<Point> intersectionPoints = CircleLine.getCircleLineIntersectionPoint(Driver, new Point(x.getDouble("destx"), x.getDouble("desty")), Pedestrian, 1);
@@ -172,28 +178,37 @@ public class server {
 			
 			//Calculate the Distance and Time needed by each one
 			
-			distanceDriver = CircleLine.getDistance(intersection, Driver);
+			distanceDriver 	   = CircleLine.getDistance(intersection, Driver);
 			distancePedestrian = CircleLine.getDistance(intersection, Pedestrian);
-			System.out.println(distanceDriver + "and the pedestrian distance is " + distancePedestrian);
+			destination 	   = CircleLine.getDistance(intersection, Destination);
 			
-			driverDelay = (int) (distanceDriver / 50);
-			pedestrianDelay = (int) (distancePedestrian / 7);		//should be passed back or something
+			charge = (int) destination * charge;
 			
 			
-			totalDelay = driverDelay + pedestrianDelay;
+			driverDelay 	 = (int) (distanceDriver / 50);
+			pedestrianDelay  = (int) (distancePedestrian / 7);		//should be passed back or something
+			destinationDelay = (int) (destination / 50);
+			
+			meetingDelay = driverDelay + pedestrianDelay;
+			totalDelay   = destinationDelay + meetingDelay;
 			
 			//Call non blocking delayed-seats updater function
 			ScheduledThreadPoolExecutor exec = new ScheduledThreadPoolExecutor(1);
 
 			exec.schedule(new Runnable() {
 			          public void run() {
-			              //run();
-			        	  System.out.println("Yo");
+			        	  try {
+							server.db.dropPedestrian(Did);
+						} catch (SQLException e) {
+							e.printStackTrace();
+						}
 			          }
 			     }, totalDelay, TimeUnit.SECONDS);
 		
 			
-			return totalDelay;
+			
+			String output = meetingDelay + "," + charge;
+			return output;
 		}
 		
 		
@@ -224,6 +239,7 @@ public class server {
 									
 								
 									//Search for available drives DO THE LOGIC HERE, THEN REPLY
+								server.db.updateDrivers();
 								drivers = server.checkDrivers(positions[0], positions[1], positions[2], positions[3], skip);
 								boolean flag = true;
 								
@@ -236,12 +252,14 @@ public class server {
 										}else {
 											output = "1";
 										}
-		
+										int meetingDistance;
+										
 										if(output.equals("1")) {
 											dout.writeBytes(output + '\n');
 											output ="";
 											for(int j=0;j<drivers.size()/3;j++) {
-												output += "ID# "+ drivers.get(j*3).toString() + ", closest meeting point: " + drivers.get(3*j+1).toString() + ", charge: " + drivers.get(3*j+2).toString() + "##";
+												meetingDistance = Integer.valueOf(drivers.get(3*j+1));
+												output += "ID# "+ drivers.get(j*3).toString() + ", closest meeting point: " + meetingDistance + ", charge: " + drivers.get(3*j+2).toString() + "##";
 											}
 											dout.writeBytes(output + '\n');
 											dout.flush();
@@ -269,13 +287,14 @@ public class server {
 												skip.add(id);
 												drivers = server.checkDrivers(positions[0], positions[1], positions[2], positions[3], skip);
 											}else {
+												
 												//fix the free seats right now
+												server.db.getPedestrian(Did);
 												
-												//call blocking function to continue accepting offers
-
-												int totalDelay = completeOffer(Did, Pid, dout);
+												//call blocking function to continue end offer
+												String delayANDcharge = completeOffer(Did, Pid, dout);
 												
-												dout.writeBytes(String.valueOf(totalDelay)  + '\n');
+												dout.writeBytes(delayANDcharge  + '\n');
 												dout.flush();			
 												
 												flag = false;
@@ -290,6 +309,7 @@ public class server {
 											//put on waiting list
 											//dout.writeBytes(output + '\n');
 											//dout.flush();
+											server.db.updateDrivers();
 											drivers = server.checkDrivers(positions[0], positions[1], positions[2], positions[3], skip);
 											//wait
 											//check for drivers again 
