@@ -99,6 +99,10 @@ public class client {
 						
 						//wait for a server signal to display bill and end the pedestrian
 						//the server will calculate and wait the needed time for them to meet 
+						reply = serverInput.readLine();
+						System.out.println("\nPedestrian wait time is " + reply);
+						
+						
 						return;
 					}
 					

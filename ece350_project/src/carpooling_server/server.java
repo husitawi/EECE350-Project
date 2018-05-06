@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import carpooling_server.CircleLine.Point;
 
@@ -68,7 +70,6 @@ public class server {
 				sql += ")";			
 		}
 		
-		System.out.println(sql);
 		
 		ResultSet result = db.runSql(sql);
 		ArrayList<String> drivers = new ArrayList<String>() ;
@@ -137,6 +138,66 @@ public class server {
 		  this.db = database;
 		  }
 		
+		
+		public int completeOffer(int Did, int Pid, DataOutputStream dout) throws SQLException, IOException {
+			ResultSet x;
+			Point intersection;
+			double distanceDriver;
+			double distancePedestrian;
+			int driverDelay;
+			int pedestrianDelay;
+			int totalDelay;
+			
+			//Get the Pedestrian and Driver current locations
+			
+			x = server.db.findPedestrian_id(Pid);
+			Point Pedestrian = new Point(x.getDouble("posx"),x.getDouble("posy"));
+			
+			
+			
+			x = server.db.findDriver_id(Did);
+			Point Driver 	 = new Point(x.getDouble("posx"),x.getDouble("posy"));
+			
+			//Find the Intersection point
+			List<Point> intersectionPoints = CircleLine.getCircleLineIntersectionPoint(Driver, new Point(x.getDouble("destx"), x.getDouble("desty")), Pedestrian, 1);
+			if(intersectionPoints.get(1) == null) {
+				intersection = intersectionPoints.get(0);
+			}else {
+				double halfx = (intersectionPoints.get(1).x - intersectionPoints.get(0).x)/2;
+				double halfy = (intersectionPoints.get(1).y - intersectionPoints.get(0).y)/2;
+				Point midway = new Point( halfx , halfy);
+				
+				intersection = midway;
+			}
+			
+			//Calculate the Distance and Time needed by each one
+			
+			distanceDriver = CircleLine.getDistance(intersection, Driver);
+			distancePedestrian = CircleLine.getDistance(intersection, Pedestrian);
+			System.out.println(distanceDriver + "and the pedestrian distance is " + distancePedestrian);
+			
+			driverDelay = (int) (distanceDriver / 50);
+			pedestrianDelay = (int) (distancePedestrian / 7);		//should be passed back or something
+			
+			
+			totalDelay = driverDelay + pedestrianDelay;
+			
+			//Call non blocking delayed-seats updater function
+			ScheduledThreadPoolExecutor exec = new ScheduledThreadPoolExecutor(1);
+
+			exec.schedule(new Runnable() {
+			          public void run() {
+			              //run();
+			        	  System.out.println("Yo");
+			          }
+			     }, totalDelay, TimeUnit.SECONDS);
+		
+			
+			return totalDelay;
+		}
+		
+		
+		
 		public void  run() {
 			//	Do calculations to find driver and other wonders
 			try {
@@ -159,7 +220,7 @@ public class server {
 								}
 								
 								String pref = parts[i];	//save preferences
-								server.db.savePedestrian(positions[0], positions[1], positions[2], positions[3], pref);
+								int Pid = server.db.savePedestrian(positions[0], positions[1], positions[2], positions[3], pref);
 									
 								
 									//Search for available drives DO THE LOGIC HERE, THEN REPLY
@@ -190,7 +251,9 @@ public class server {
 											input = din.readLine();
 											int id = Integer.valueOf(input);
 											server.driver_id.put(id,"W");
-			
+											
+											int Did = id;
+											
 											while(server.driver_id.get(id) == "W" ) {	//keep checking for offer response
 												Thread.sleep(1000); //wait 1 second before checking the requested drivers again
 											}
@@ -205,7 +268,22 @@ public class server {
 											if(server.driver_id.get(id) == "R" ) {
 												skip.add(id);
 												drivers = server.checkDrivers(positions[0], positions[1], positions[2], positions[3], skip);
+											}else {
+												//fix the free seats right now
+												
+												//call blocking function to continue accepting offers
+
+												int totalDelay = completeOffer(Did, Pid, dout);
+												
+												dout.writeBytes(String.valueOf(totalDelay)  + '\n');
+												dout.flush();			
+												
+												flag = false;
+												
+
 											}
+											
+											
 											
 											
 										}else {

@@ -59,9 +59,15 @@ public class db_connection {
 	}
 	
 	
-	public void savePedestrian(double posx, double posy, double destx, double desty, String pref) throws SQLException {
+	public int savePedestrian(double posx, double posy, double destx, double desty, String pref) throws SQLException {
+		int id = -1;
 		String q = "INSERT INTO `pedestrian` (`posx`, `posy`, `destx`, `desty`, `preferences`) VALUES (" + posx + ", " + posy + ", "+destx+", "+desty+", '"+pref+"');";
-		st.executeUpdate(q);
+		st.executeUpdate(q, Statement.RETURN_GENERATED_KEYS);
+		rs = st.getGeneratedKeys();
+		if (rs.next()) {
+			id = rs.getInt(1);
+	    }
+		return id;
 	}
 	
 	public int saveDriver(double posx, double posy, double destx, double desty, double cost, double passengers, double freeSeats, String regulations) throws SQLException {
